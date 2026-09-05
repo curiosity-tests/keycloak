@@ -52,8 +52,8 @@ env:
 
 concurrency:
   # Only cancel jobs for PR updates
-  group: ci-${{ github.ref }}-${{ inputs.leg || github.event_name }}
-  cancel-in-progress: true
+  group: ci-${{ github.ref }}-${{ inputs.leg || 'push' }}-${{ inputs.racecar_run }}
+  cancel-in-progress: false
 
 defaults:
   run:
@@ -70,6 +70,9 @@ jobs:
   version-compatibility:
     name: Version Compatibility Matrix
     uses: ./.github/workflows/version-compatibility-matrix.yml
+    with:
+      chalk_on: ${{ github.event_name == 'workflow_dispatch' && inputs.leg != 'baseline' }}
+      profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
     permissions:
       contents: read
       id-token: write
