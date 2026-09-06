@@ -43,7 +43,7 @@ env:
   # The one variable that separates the arms. On baseline, action-checkout
   # skips its Set up Chalk step entirely. The github.event_name guard keeps
   # incidental push/PR runs uninstrumented, where inputs.leg is empty.
-  CHALK_ON: ${{ github.event_name == 'workflow_dispatch' && inputs.leg != 'baseline' }}
+  CHALK_ON: ${{ inputs.leg == 'instrumented' }}
   MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
   SUREFIRE_RERUN_FAILING_COUNT: 2
   SUREFIRE_RETRY: "-Dsurefire.rerunFailingTestsCount=2"
@@ -71,7 +71,7 @@ jobs:
     name: Version Compatibility Matrix
     uses: ./.github/workflows/version-compatibility-matrix.yml
     with:
-      chalk_on: ${{ github.event_name == 'workflow_dispatch' && inputs.leg != 'baseline' }}
+      chalk_on: ${{ inputs.leg == 'instrumented' }}
       profile: ${{ inputs.profile || 'curiosity-tests-racecar' }}
     permissions:
       contents: read
@@ -176,7 +176,7 @@ jobs:
 
   build:
     name: Build
-    if: ${{ (github.event_name == 'workflow_dispatch' || needs.conditional.outputs.ci == 'true') }}
+    if: ${{ ('push' == 'workflow_dispatch' || needs.conditional.outputs.ci == 'true') }}
     runs-on: ubuntu-latest
     needs: conditional
     steps:
@@ -205,7 +205,7 @@ jobs:
         run: ./mvnw -Pdocs,distribution,operator spotless:check
 
       - name: Check for unstaged proto.lock files
-        if: github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'release/')
+        if: ${{ 'push' == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'release/') }}
         run: git diff --name-only --exit-code -- "**/proto.lock"
 
   unit-tests:
@@ -374,7 +374,7 @@ jobs:
   quarkus-unit-tests:
     name: Quarkus UT
     needs: [build, conditional]
-    if: ${{ (github.event_name == 'workflow_dispatch' || needs.conditional.outputs.ci-quarkus == 'true') }}
+    if: ${{ ('push' == 'workflow_dispatch' || needs.conditional.outputs.ci-quarkus == 'true') }}
     timeout-minutes: 15
     strategy:
       matrix:
@@ -579,7 +579,7 @@ jobs:
   volatile-sessions-tests:
     name: Volatile Sessions IT
     needs: [build, conditional]
-    if: ${{ (github.event_name == 'workflow_dispatch' || needs.conditional.outputs.ci-store == 'true') }}
+    if: ${{ ('push' == 'workflow_dispatch' || needs.conditional.outputs.ci-store == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 150
     steps:
@@ -622,7 +622,7 @@ jobs:
   external-infinispan-tests:
     name: External Infinispan IT
     needs: [build, conditional]
-    if: ${{ (github.event_name == 'workflow_dispatch' || needs.conditional.outputs.ci-store == 'true') }}
+    if: ${{ ('push' == 'workflow_dispatch' || needs.conditional.outputs.ci-store == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 150
     strategy:
@@ -670,7 +670,7 @@ jobs:
   stateless-tests:
     name: Stateless IT
     needs: [build, conditional]
-    if: ${{ (github.event_name == 'workflow_dispatch' || needs.conditional.outputs.ci-store == 'true') }}
+    if: ${{ ('push' == 'workflow_dispatch' || needs.conditional.outputs.ci-store == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 150
     steps:
@@ -713,7 +713,7 @@ jobs:
   auroradb-integration-tests:
     name: AuroraDB IT
     needs: conditional
-    if: ${{ (github.event_name == 'workflow_dispatch' || needs.conditional.outputs.ci-aurora == 'true') }}
+    if: ${{ ('push' == 'workflow_dispatch' || needs.conditional.outputs.ci-aurora == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 150
     permissions:
@@ -900,7 +900,7 @@ jobs:
   azure-integration-tests:
     name: AzureDB IT
     needs: conditional
-    if: ${{ (github.event_name == 'workflow_dispatch' || needs.conditional.outputs.ci-azure == 'true') }}
+    if: ${{ ('push' == 'workflow_dispatch' || needs.conditional.outputs.ci-azure == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 150
     permissions:
@@ -1127,7 +1127,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 75
-    if: ${{ (github.event_name == 'workflow_dispatch' || needs.conditional.outputs.ci-additional-dbs == 'true') }}
+    if: ${{ ('push' == 'workflow_dispatch' || needs.conditional.outputs.ci-additional-dbs == 'true') }}
     strategy:
       matrix:
         db: [edb]
@@ -1165,7 +1165,7 @@ jobs:
     name: Store Model Tests
     runs-on: ubuntu-latest
     needs: [build, conditional]
-    if: ${{ (github.event_name == 'workflow_dispatch' || needs.conditional.outputs.ci-store == 'true') }}
+    if: ${{ ('push' == 'workflow_dispatch' || needs.conditional.outputs.ci-store == 'true') }}
     timeout-minutes: 75
     steps:
       - name: Checkout code
@@ -1367,7 +1367,7 @@ jobs:
 
   webauthn-integration-tests:
     name: WebAuthn IT
-    if: ${{ (github.event_name == 'workflow_dispatch' || needs.conditional.outputs.ci-webauthn == 'true') }}
+    if: ${{ ('push' == 'workflow_dispatch' || needs.conditional.outputs.ci-webauthn == 'true') }}
     runs-on: ubuntu-latest
     needs:
       - conditional
@@ -1415,7 +1415,7 @@ jobs:
   sssd-unit-tests:
     name: SSSD
     runs-on: ubuntu-latest
-    if: ${{ (github.event_name == 'workflow_dispatch' || needs.conditional.outputs.ci-sssd == 'true') }}
+    if: ${{ ('push' == 'workflow_dispatch' || needs.conditional.outputs.ci-sssd == 'true') }}
     needs:
       - conditional
       - build
@@ -1720,7 +1720,7 @@ jobs:
 
   admin-v2-tests:
     name: Admin v2
-    if: ${{ (github.event_name == 'workflow_dispatch' || needs.conditional.outputs.ci-admin-v2 == 'true') }}
+    if: ${{ ('push' == 'workflow_dispatch' || needs.conditional.outputs.ci-admin-v2 == 'true') }}
     runs-on: ubuntu-latest
     needs:
       - build
@@ -1751,7 +1751,7 @@ jobs:
 
   jackson3-admin-client-tests:
     name: Jackson 3 Admin Client
-    if: ${{ (github.event_name == 'workflow_dispatch' || needs.conditional.outputs.ci-jackson3 == 'true') }}
+    if: ${{ ('push' == 'workflow_dispatch' || needs.conditional.outputs.ci-jackson3 == 'true') }}
     runs-on: ubuntu-latest
     needs:
       - build
